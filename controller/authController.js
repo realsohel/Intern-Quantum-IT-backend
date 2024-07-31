@@ -14,30 +14,25 @@ const generateToken = user => {
 
 export const registerUser = async (req, res) => {
     const { username, email, password ,dob} = req.body;
-    try {
-      // Check if user already exists
-      
-      let user = await User.findOne({ email });
-      
-      
-      if(user){
-          return res.status(400).json({ message: "User with this emailalready exists" });
+    console.log(username, email,password,dob)
+    try {        
+        let user = await User.findOne({ email });
+    
+        if(user){
+            return res.status(400).json({success: false,  message: "User with this email already exists" });
         }
         
-        // hashing password
         const salt = await bcrypt.genSalt(10);
-        const hashPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
         
         const formattedDob = new Date(dob).toISOString().split('T')[0];
         user = new User({
             username,
             email,
             dob: formattedDob,
-            password : hashPassword
+            password : hashedPassword
         })
-    
-        // Create and save user based on the role
-        
+            
         await user.save();
         const token = generateToken(user);
         res
@@ -60,18 +55,14 @@ export const login = async (req, res) => {
     const { email } = req.body;
 
     try {
-
         const user = await User.findOne({ email });
-    
-    
-        // Check if user exists
+        
         if (!user) {
             return res
             .status(400)
             .json({ success: false, message: "User does not exist !" });
         }
     
-        // check password
         const isPasswordMatch = await bcrypt.compare(
             req.body.password,
             user.password
@@ -79,14 +70,12 @@ export const login = async (req, res) => {
         if (!isPasswordMatch) {
             return res
             .status(400)
-            .json({ success: false, message: "Invalid " });
+            .json({ success: false, message: "Invalid Password" });
         }
     
         const { password, role, appointments, ...rest } = user._doc;
-    
-        // get token
+
         const token = generateToken(user);
-    
     
         res.status(200).json({
             success: true,
